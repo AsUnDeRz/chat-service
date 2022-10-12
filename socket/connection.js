@@ -43,6 +43,7 @@ export const onConnection = (socket) => {
       senderId: socket.id,
       id: Date.now(),
       image: message.image,
+      mediaUrl: message.mediaUrl,
     };
 
     let id = message.channel_id;

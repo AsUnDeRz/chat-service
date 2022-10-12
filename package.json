@@ -5,15 +5,17 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha ./test/*.js",
     "start": "node app.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@socket.io/admin-ui": "^0.4.0",
     "body-parser": "^1.20.0",
     "express": "^4.18.1",
     "socket.io": "^4.5.1",
+    "socket.io-client": "^4.5.1",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.4.0"
   },
   "optionalDependencies": {
@@ -27,5 +29,9 @@
   "bugs": {
     "url": "https://github.com/AsUnDeRz/chat-service/issues"
   },
-  "homepage": "https://github.com/AsUnDeRz/chat-service#readme"
+  "homepage": "https://github.com/AsUnDeRz/chat-service#readme",
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.0.0"
+  }
 }

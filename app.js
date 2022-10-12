@@ -1,37 +1,30 @@
-// const express = require("express");
-// const socketIo = require("socket.io");
-// const http = require("http");
-// const bodyParser = require("body-parser");
 import express from "express";
 import { Server } from "socket.io";
 import http from "http";
 import bodyParser from "body-parser";
 
 import { onConnection } from "./socket/connection.js";
+import { onMobileConnect } from "./socket/mobile_connect.js";
 import { STATIC_CHANNELS, PROFILE_LIST } from "./constance/model.js";
+import adminRoute from "./routes/admin.js";
+import { networkInterfaces } from "os";
 
+import { instrument } from "@socket.io/admin-ui";
 const PORT = 3001;
 const app = express();
 const server = http.createServer(app);
 
 export const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "https://admin.socket.io"],
+    credentials: true,
   },
 }); //in case server and client run on different urls
-// io.on("connection", (socket) => {
-//   console.log("client connected: ", socket.id);
 
-//   socket.join("clock-room");
+instrument(io, {
+  auth: false,
+});
 
-//   socket.on("disconnect", (reason) => {
-//     console.log(reason);
-//   });
-// });
-
-// setInterval(() => {
-//   io.to("clock-room").emit("time", new Date().toString());
-// }, 1000);
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   // Request methods you wish to allow
@@ -53,18 +46,29 @@ app.use((req, res, next) => {
 });
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use("/admin", adminRoute);
 
 server.listen(PORT, (err) => {
   if (err) console.log(err);
-  console.log("Server running on Port ", PORT);
+
+  const nets = networkInterfaces();
+  const results = Object.create(null); // Or just '{}', an empty object
+
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+      if (net.family === "IPv4" && !net.internal) {
+        if (!results[name]) {
+          results[name] = [];
+        }
+        results[name].push(net.address);
+      }
+    }
+  }
+  console.log("Server running on Port ", [results["en0"][0], PORT]);
 });
 
-io.on("connection", onConnection);
-
-app.get("/", (req, res) => {
-  io.to("clock-room").emit("receive", "Send broadcast from server");
-  res.send("broadcast");
-});
+io.on("connection", onMobileConnect);
 
 app.get("/getChannels", (req, res) => {
   res.json({
@@ -103,6 +107,26 @@ app.post("/profile", (req, res) => {
 app.get("/profile", (req, res) => {
   res.json({
     profiles: PROFILE_LIST,
+  });
+});
+
+app.post("/create-room", (req, res) => {
+  let body = req.body;
+
+  console.log(body);
+  if (body) {
+    let name = req.body.name;
+
+    STATIC_CHANNELS.push({
+      name: name,
+      participants: 0,
+      id: STATIC_CHANNELS.length + 1,
+      sockets: [],
+      messages: [],
+    });
+  }
+  res.json({
+    data: "success",
   });
 });
 
